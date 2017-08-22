@@ -7,7 +7,7 @@ set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_STATIC_LIBRARY_PREFIX "")
 
 
-set(SOURCE_FILES library.cpp library.h)
+set(SOURCE_FILES WebServer.cpp WebServer.h)
 add_library(libWebServer ${SOURCE_FILES})
 
 #installation
