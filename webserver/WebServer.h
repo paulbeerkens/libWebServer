@@ -27,12 +27,13 @@ public:
 
     void onUnrecognizedURL(std::ostream &os);
 
+    std::string version () const;
+protected:
     WebServer(WebServer const &) = delete;             // Copy construct
     WebServer(WebServer &&) = delete;                  // Move construct
     WebServer &operator=(WebServer const &) = delete;  // Copy assign
     WebServer &operator=(WebServer &&) = delete;      // Move assign
 
-protected:
     WebServer()
     {
 
