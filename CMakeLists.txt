@@ -9,6 +9,7 @@ set(CMAKE_STATIC_LIBRARY_PREFIX "")
 
 add_subdirectory(webserver)
 add_subdirectory(TestApps)
+add_subdirectory(Test)
 
 #installation
 #file(GLOB HEADERS *.h)

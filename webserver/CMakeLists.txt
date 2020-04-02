@@ -1,6 +1,11 @@
 cmake_minimum_required(VERSION 3.8)
 
-set(SOURCE_FILES WebServer.cpp WebServer.h)
+set(SOURCE_FILES
+        UrlRequest.cpp
+        UrlRequest.h
+        WebServer.cpp
+        WebServer.h)
+
 add_library(libWebServer ${SOURCE_FILES})
 
 add_definitions (-DLIBWEBSERVERVERSION="${PROJECT_VERSION}")
