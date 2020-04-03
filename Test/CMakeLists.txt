@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.8)
 
 set(SOURCE_FILES
         atest.cpp
+        Running.cpp
         )
 
 find_package(Threads)

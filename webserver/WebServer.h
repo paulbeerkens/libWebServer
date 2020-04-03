@@ -5,6 +5,8 @@
 #include <unordered_map>
 #include "UrlRequest.h"
 #include <functional>
+#include <thread>
+#include <atomic>
 
 namespace webserver {
 
@@ -27,20 +29,35 @@ public:
 
     bool start (std::int32_t port);
 
+    bool stop ();
+
+    void cleanupForUnitTest () {
+        stop ();
+        threadPtr_=nullptr;
+        port_=-1;
+    }
 protected:
     WebServer(WebServer const &) = delete;             // Copy construct
     WebServer(WebServer &&) = delete;                  // Move construct
     WebServer &operator=(WebServer const &) = delete;  // Copy assign
     WebServer &operator=(WebServer &&) = delete;      // Move assign
+    WebServer () = default;
 
-    WebServer() {
+    ~WebServer () {stop ();};
 
-    }
+    void doWork (); //the thread that does the actual work for this library
+                    //in the future can be changed to a thread pool or
+                    //even an external thread.
 
     std::unordered_map<std::string, WebServerCB> registeredURLs_;
 
     std::int32_t port_ {-1};
     int socket_ {-1};
+
+    std::unique_ptr <std::thread> threadPtr_;
+    std::atomic <bool> requestedToTerminate_;
+
+
 };
 
 }
