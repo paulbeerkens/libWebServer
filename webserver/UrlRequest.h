@@ -8,9 +8,11 @@ namespace webserver {
 
 class UrlRequest {
 public:
-    explicit UrlRequest (std::string_view sv);
+    explicit UrlRequest (const std::string& remoteIP);
+    bool processRequestLine (const std::string& line);
 protected:
     std::unordered_map <std::string, std::string> params_;
+    std::string remoteIP_;
 };
 
 }

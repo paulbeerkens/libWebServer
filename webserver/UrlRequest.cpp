@@ -1,8 +1,11 @@
 #include "UrlRequest.h"
 #include <iostream>
 
-webserver::UrlRequest::UrlRequest(std::string_view sv) {
-    for (auto c: sv) {
-        std::cout<<c<<std::endl;
-    }
+webserver::UrlRequest::UrlRequest(const std::string& remoteIP)
+:remoteIP_ (remoteIP) {
+
+}
+
+bool webserver::UrlRequest::processRequestLine(const std::string &line) {
+    return false;
 }

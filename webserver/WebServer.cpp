@@ -7,6 +7,9 @@
 #include <future>
 #include <unistd.h>
 //#include <sstream>
+#include <arpa/inet.h>
+#include <optional>
+#include <sstream>
 
 std::string webserver::WebServer::version() const {
     //return std::to_string (LIBWEBSERVERVERSION);
@@ -77,11 +80,26 @@ void webserver::WebServer::doWork() {
     log ("Webserver listening to port "+std::to_string (port_));
 
     while (!requestedToTerminate_.load(std::memory_order_relaxed)) {
-        std::this_thread::sleep_for(std::chrono::seconds(1));
         struct sockaddr_in clientAddr;
-        socklen_t len;
+        socklen_t len=sizeof (clientAddr);
 
         auto newSocket=::accept (socket_, reinterpret_cast<struct sockaddr*>(&clientAddr), &len);
+        //If accept fails it could be a temporary thing. For example there could be a handle leak somewhere in the app
+        //and we can force increase the number of handles for the application or some connections disconnect which frees
+        //up some more handles. Better to keep trying than to give up.
+        if (newSocket==-1) {
+            log ("WebServer::doWork accept call failed on port "+std::to_string (port_)+" with error code "+std::to_string(errno)+" ("+strerror (errno)+"). Going to try again in one minute");
+            for (std::int32_t loopCount=60;!requestedToTerminate_&&loopCount>0;--loopCount) std::this_thread::sleep_for(std::chrono::seconds(1));
+            continue;
+        }
+
+        //Get the remote ip address. Remote port is less interesting as it is temporary in most cases.
+        char remoteIP [20] = {0};
+        if (::inet_ntop (AF_INET, reinterpret_cast <const void*>(&clientAddr.sin_addr), remoteIP, sizeof (remoteIP))==nullptr) {
+            log ("Failed to get remote ip address");
+        }
+
+        auto request=processRequest (newSocket,remoteIP);
 
         std::cout<<"A Connection"<<std::endl;
         ::close (newSocket);
@@ -89,14 +107,71 @@ void webserver::WebServer::doWork() {
 }
 
 bool webserver::WebServer::stop() {
+    log ("WebServer::stop called");
     requestedToTerminate_.store(true);
+
+    if (socket_!=-1) {
+        ::shutdown(socket_,SHUT_RD); //this forces the accept loop to terminate
+        ::close (socket_);
+        socket_=-1;
+    }
 
     if (threadPtr_ && threadPtr_->joinable()) {
         threadPtr_->join ();
     }
-    if (socket_!=-1) {
-        ::close (socket_);
-        socket_=-1;
-    }
+
     return false;
+}
+
+std::optional<webserver::UrlRequest> webserver::WebServer::processRequest(int socket, const std::string& remoteIP) {
+    //A typical request looks like this:
+    //GET /hello?test=1 HTTP/1.1
+    //Host: vmserver03:25000
+    //Upgrade-Insecure-Requests: 1
+    //Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+    //User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.5 Safari/605.1.15
+    //Accept-Language: en-us
+    //Accept-Encoding: gzip, deflate
+    //Connection: keep-alive
+
+    assert (socket!=-1 && "WebServer::processRequest called with an invalid socket. Small chance that this during shutdown.");
+    if (socket==-1) return std::nullopt;
+
+    auto retValue=std::make_optional<UrlRequest> (remoteIP);
+
+    bool requestCompleted {false};
+    std::stringstream currentLine;
+
+    while (!requestCompleted && !requestedToTerminate_) {
+
+        //todo add timeout
+        char c;
+        auto n = ::read(socket, &c, 1);
+        if (n != 1) {
+             if (n==0) {
+                 log ("EOF while reading from socket in WebServer::processRequest with error code "+std::to_string(errno)+" ("+strerror (errno)+")");
+                 return std::nullopt; //connection was closed
+             }
+             if (errno==EAGAIN||errno==EINTR) continue; //these are acceptable reasons why read failed. Try again.
+             log ("Failed to read from socket in WebServer::processRequest with error code "+std::to_string(errno)+" ("+strerror (errno)+")");
+             return std::nullopt;
+        }
+
+        if (c==13) //end of line
+        {
+            if (!currentLine.str ().empty()) {
+                if (!retValue->processRequestLine(currentLine.str ())) {
+                    log ("Failed to process http request");
+                    return std::nullopt;
+                }
+            } else {
+                requestCompleted=true;
+            }
+            currentLine.str (""); //start afresh for the next line
+        } else {
+            if (c!=10) currentLine<<c;} //ignore new line. Add all other characters
+    }
+
+    return retValue;
+
 }

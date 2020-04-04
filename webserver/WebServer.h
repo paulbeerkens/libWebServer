@@ -57,7 +57,7 @@ protected:
     std::unique_ptr <std::thread> threadPtr_;
     std::atomic <bool> requestedToTerminate_;
 
-
+    std::optional <UrlRequest> processRequest (int socket, const std::string& remoteIP);
 };
 
 }
