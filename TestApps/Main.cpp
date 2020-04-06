@@ -4,7 +4,7 @@
 #include <thread>
 
 
-int main (int argc, char** args) {
+int main () {
     std::cout<<webserver::WebServer::get ().version ()<<std::endl;
 
     if (!webserver::WebServer::get ().start (25000)) {

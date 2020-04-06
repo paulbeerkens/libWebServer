@@ -6,10 +6,16 @@ set(CMAKE_CXX_STANDARD 17)
 #Do not add another lib to the library name
 set(CMAKE_STATIC_LIBRARY_PREFIX "")
 
+add_compile_options(-Wall -Wextra -pedantic -Werror)
+
+#set code coverage flags for debug builds only
+set(CMAKE_CXX_FLAGS_DEBUG "-fprofile-arcs -ftest-coverage")
 
 add_subdirectory(webserver)
 add_subdirectory(TestApps)
 add_subdirectory(Test)
+
+
 
 #installation
 #file(GLOB HEADERS *.h)

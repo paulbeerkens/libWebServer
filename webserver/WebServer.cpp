@@ -160,8 +160,9 @@ std::optional<webserver::UrlRequest> webserver::WebServer::processRequest(int so
         if (c==13) //end of line
         {
             if (!currentLine.str ().empty()) {
-                if (!retValue->processRequestLine(currentLine.str ())) {
-                    log ("Failed to process http request");
+                //std::cout<<currentLine.str ()<<std::endl;
+                if (!retValue->processHttpRequestLine(currentLine.str())) {
+                    log ("Failed to process http request. Line: "+currentLine.str ());
                     return std::nullopt;
                 }
             } else {
@@ -173,5 +174,4 @@ std::optional<webserver::UrlRequest> webserver::WebServer::processRequest(int so
     }
 
     return retValue;
-
 }
