@@ -140,7 +140,7 @@ std::optional<webserver::UrlRequest> webserver::WebServer::processRequest(int so
     auto retValue=std::make_optional<UrlRequest> (remoteIP);
 
     bool requestCompleted {false};
-    std::stringstream currentLine;
+    std::string currentLine;
 
     while (!requestCompleted && !requestedToTerminate_) {
 
@@ -159,18 +159,18 @@ std::optional<webserver::UrlRequest> webserver::WebServer::processRequest(int so
 
         if (c==13) //end of line
         {
-            if (!currentLine.str ().empty()) {
-                //std::cout<<currentLine.str ()<<std::endl;
-                if (!retValue->processHttpRequestLine(currentLine.str())) {
-                    log ("Failed to process http request. Line: "+currentLine.str ());
+            if (!currentLine.empty()) {
+                std::cout<<currentLine<<std::endl;
+                if (!retValue->processHttpRequestLine(currentLine)) {
+                    log ("Failed to process http request. Line: "+currentLine);
                     return std::nullopt;
                 }
             } else {
                 requestCompleted=true;
             }
-            currentLine.str (""); //start afresh for the next line
+            currentLine.clear (); //start afresh for the next line
         } else {
-            if (c!=10) currentLine<<c;} //ignore new line. Add all other characters
+            if (c!=10) currentLine.push_back(c);} //ignore new line. Add all other characters
     }
 
     return retValue;

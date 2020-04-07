@@ -1,5 +1,6 @@
 #include "UrlRequest.h"
 #include <iostream>
+#include <algorithm>
 #include "WebUtils.h"
 
 //HTTP spec: https://tools.ietf.org/html/rfc7230#section-3.1
@@ -10,11 +11,12 @@ webserver::UrlRequest::UrlRequest(const std::string& remoteIP)
 }
 
 bool webserver::UrlRequest::processHttpRequestLine(const std::string &line) {
+
     if (!readRequestLine) {
+        readRequestLine=true;
         //The Request-Line is the first line in the http request
         //and is of the format like:
         //GET / HTTP/1.1
-        readRequestLine=true;
         return processRequestLine (line);
     }
     return processHeaderField (line);
@@ -73,16 +75,21 @@ bool webserver::UrlRequest::extractParameters() {
     //example /hello?world=1&&intro=true
 
     auto paramBegin=requestTarget_.find ('?');
-    if (paramBegin==std::string::npos) return true; //no paramaters in this request target
+    baseUrl_=requestTarget_.substr(0,paramBegin);
+    //convert to lower case because the spec says the url is not case sensitive
+    std::transform (baseUrl_.begin (), baseUrl_.end (), baseUrl_.begin (), [] (unsigned char c) {return std::tolower(c);});
+    if (paramBegin==std::string::npos) return true; //no parameters in this request target so we are done.
 
-    auto paramChunks=webserver::split (requestTarget_,'&');
+    auto paramChunks=webserver::split (requestTarget_.substr(paramBegin+1, std::string::npos),'&');
     for (const auto& chunk: paramChunks) { //these are param settings like debugLevel=3
         //see if there is a value in here
         auto equalPos=chunk.find ('=');
         if (equalPos==std::string::npos) {
             params_.emplace(chunk,"");
         } else {
-            params_.emplace (chunk.substr(0,equalPos),chunk.substr(equalPos+1, std::string::npos));
+            std::string value=chunk.substr(equalPos+1, std::string::npos);
+            if (!deUrlify(value)) return false;
+            params_.emplace (chunk.substr(0,equalPos),value);
         }
     }
 

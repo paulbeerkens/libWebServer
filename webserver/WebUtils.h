@@ -27,6 +27,30 @@ inline std::vector<std::string> split (const std::string& s, char delim) {
     return retVal;
 }
 
+
+inline bool deUrlify (std::string& s) {
+    int originalLength=s.size ();
+    int newLength=0; //for now
+
+    for (int i=0; i<originalLength; ++i) {
+        char c = s[i];
+        if (c == '%') {
+            if (i+2>=originalLength) return false; //not enough room left
+            char* temp;
+            std::string valStr=s.substr(i+1, 2);
+            auto val = std::strtol(valStr.c_str (),&temp,16);
+            auto processedLen= temp - valStr.c_str ();
+            if (processedLen != 2) return false;
+            s[newLength++] = static_cast <char> (val);
+            i+=2;
+        } else {
+            s[newLength++] = c;
+        }
+    };
+
+    s.resize (newLength);
+    return true;
 }
+} //end of namespace
 
 #endif //LIBWEBSERVER_WEBUTILS_H

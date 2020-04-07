@@ -14,6 +14,7 @@ public:
     const std::string& getMethod () const {return method_;};
     const std::string& getRequestTarget () const {return requestTarget_;};
     const std::string& getHost () const {return host_;}; //returns host and port (if present)
+    const std::string& getBaseUrl () const {return baseUrl_;};
 
     std::size_t getParamCount () const {return params_.size ();}
     bool hasParam (const std::string& name) const {return params_.count (name)>0;}
@@ -34,6 +35,7 @@ protected:
     std::string method_; //GET, POST etc
     std::string requestTarget_; // none host and none port part of the url. eg /index.html
     std::string host_; //contains host and port (if port is present)
+    std::string baseUrl_; //the url without parameters
 };
 
 }
