@@ -16,7 +16,7 @@ bool webserver::UrlRequest::processHttpRequestLine(const std::string &line) {
         readRequestLine=true;
         //The Request-Line is the first line in the http request
         //and is of the format like:
-        //GET / HTTP/1.1
+        //GET /info?pageSize=20 HTTP/1.1
         return processRequestLine (line);
     }
     return processHeaderField (line);

@@ -12,6 +12,10 @@ int main () {
         return 1;
     }
 
+
+
+    webserver::WebServer::get ().registerURL("/settings", [] (const webserver::UrlRequest& t, [[maybe_unused]] std::ostream& os)->bool {os<<"Hello, found params: "<<t.getParamCount()<<std::endl; return true;});
+
     std::this_thread::sleep_for(std::chrono::seconds (300));
 
     webserver::WebServer::get ().stop ();

@@ -16,11 +16,14 @@ std::string webserver::WebServer::version() const {
     return LIBWEBSERVERVERSION;
 }
 
-void webserver::WebServer::registerURL(const std::string &url, webserver::WebServer::WebServerCB &cb) {
+void webserver::WebServer::registerURL(const std::string &url, const webserver::WebServer::WebServerCB &cb) {
+    //We convert all urls to lower case as they are supposed to be case insensitive.
+    std::string urlCopy (url);
+    std::transform (urlCopy.begin (), urlCopy.end (), urlCopy.begin (), [] (char c) {return std::tolower(c);});
     bool inserted;
-    std::tie (std::ignore, inserted)=registeredURLs_.emplace (url, cb);
+    std::tie (std::ignore, inserted)=registeredURLs_.emplace (urlCopy, cb);
     if (!inserted) {
-        log ("Url "+url+" was already registered");
+        log ("Url "+urlCopy+" was already registered");
     };
 }
 
@@ -99,9 +102,16 @@ void webserver::WebServer::doWork() {
             log ("Failed to get remote ip address");
         }
 
-        auto request=processRequest (newSocket,remoteIP);
+        //read and parse the request from the newly created socket
+        auto request= readRequest(newSocket, remoteIP);
 
-        std::cout<<"A Connection"<<std::endl;
+        //now process the request. This is mainly executing the callback function or loading the requested page.
+        std::stringstream output;
+        if (request.has_value()) {
+            processRequest (*request,output);
+        }
+
+        std::cout<<"A Connection "<<output.str ()<<std::endl;
         ::close (newSocket);
     }
 }
@@ -123,7 +133,7 @@ bool webserver::WebServer::stop() {
     return false;
 }
 
-std::optional<webserver::UrlRequest> webserver::WebServer::processRequest(int socket, const std::string& remoteIP) {
+std::optional<webserver::UrlRequest> webserver::WebServer::readRequest(int socket, const std::string& remoteIP) {
     //A typical request looks like this:
     //GET /hello?test=1 HTTP/1.1
     //Host: vmserver03:25000
@@ -134,7 +144,7 @@ std::optional<webserver::UrlRequest> webserver::WebServer::processRequest(int so
     //Accept-Encoding: gzip, deflate
     //Connection: keep-alive
 
-    assert (socket!=-1 && "WebServer::processRequest called with an invalid socket. Small chance that this during shutdown.");
+    assert (socket!=-1 && "WebServer::readRequest called with an invalid socket. Small chance that this during shutdown.");
     if (socket==-1) return std::nullopt;
 
     auto retValue=std::make_optional<UrlRequest> (remoteIP);
@@ -149,11 +159,11 @@ std::optional<webserver::UrlRequest> webserver::WebServer::processRequest(int so
         auto n = ::read(socket, &c, 1);
         if (n != 1) {
              if (n==0) {
-                 log ("EOF while reading from socket in WebServer::processRequest with error code "+std::to_string(errno)+" ("+strerror (errno)+")");
+                 log ("EOF while reading from socket in WebServer::readRequest with error code "+std::to_string(errno)+" ("+strerror (errno)+")");
                  return std::nullopt; //connection was closed
              }
              if (errno==EAGAIN||errno==EINTR) continue; //these are acceptable reasons why read failed. Try again.
-             log ("Failed to read from socket in WebServer::processRequest with error code "+std::to_string(errno)+" ("+strerror (errno)+")");
+             log ("Failed to read from socket in WebServer::readRequest with error code "+std::to_string(errno)+" ("+strerror (errno)+")");
              return std::nullopt;
         }
 
@@ -174,4 +184,32 @@ std::optional<webserver::UrlRequest> webserver::WebServer::processRequest(int so
     }
 
     return retValue;
+}
+
+void webserver::WebServer::processRequest(const webserver::UrlRequest &urlRequest, std::ostream& os) const {
+    //see if this url is registered as a callback
+    auto itr=registeredURLs_.find (urlRequest.getBaseUrl());
+    if (itr!=registeredURLs_.end ()) {
+        //found this URL as a callback
+        try {
+            //make the callback
+            itr->second (urlRequest, os);
+            return; //done
+        }
+        catch (const std::exception& e) {
+            os<<"Error: Exception thrown by callback function: "<<e.what ();
+        }
+        catch (...) {
+            os<<"Error: Exception thrown by callback function";
+        }
+    }
+
+    //check if this is a url is registered as a file request
+
+    //not found so send an index
+    indexPageCB_ (urlRequest, os);
+}
+
+bool webserver::WebServer::generateDefaultIndexPage(const webserver::UrlRequest &, std::ostream &) const {
+    return false;
 }

@@ -19,7 +19,7 @@ public:
         return instance;
     }
 
-    void registerURL(const std::string &url, WebServerCB& cb);
+    void registerURL(const std::string &url, const WebServerCB& cb);
 
     void onUnrecognizedURL(std::ostream &os);
 
@@ -41,15 +41,23 @@ protected:
     WebServer(WebServer &&) = delete;                  // Move construct
     WebServer &operator=(WebServer const &) = delete;  // Copy assign
     WebServer &operator=(WebServer &&) = delete;      // Move assign
-    WebServer () = default;
+    WebServer ()
+    :indexPageCB_ { [this] (const UrlRequest& urlRequest, std::ostream& os)->bool {generateDefaultIndexPage (urlRequest,os); return true;}} //set the callback to generateDefaultIndexPage
+    {
 
-    ~WebServer () {stop ();};
+    }
+
+    ~WebServer () {stop ();}
 
     void doWork (); //the thread that does the actual work for this library
                     //in the future can be changed to a thread pool or
                     //even an external thread.
 
+    void processRequest (const UrlRequest& urlRequest, std::ostream& os) const;
+
     std::unordered_map<std::string, WebServerCB> registeredURLs_;
+    WebServerCB indexPageCB_; //this is called when the requested url was not found
+    bool generateDefaultIndexPage (const UrlRequest&, std::ostream&) const;
 
     std::int32_t port_ {-1};
     int socket_ {-1};
@@ -57,7 +65,7 @@ protected:
     std::unique_ptr <std::thread> threadPtr_;
     std::atomic <bool> requestedToTerminate_;
 
-    std::optional <UrlRequest> processRequest (int socket, const std::string& remoteIP);
+    std::optional <UrlRequest> readRequest (int socket, const std::string& remoteIP);
 };
 
 }
