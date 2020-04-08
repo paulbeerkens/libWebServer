@@ -378,5 +378,14 @@ TEST (URLRequestTestParamaterExtraction, missing_value) {
     EXPECT_EQ ( urlRequest.getBaseUrl(), "/hello");
 }
 
+TEST (URLRequestTestParamaterExtraction, check_param_name_deurlifying) {
+    TestUrlRequest urlRequest ("/settings?maxCPU%25=20");
+    ASSERT_TRUE (urlRequest.callExtractParameters());
+    EXPECT_EQ (urlRequest.getParamCount(),1);
+    EXPECT_TRUE (urlRequest.hasParam("maxCPU%"));
+    EXPECT_EQ (urlRequest.getParam("maxCPU%"),"20");
+    EXPECT_EQ ( urlRequest.getBaseUrl(), "/settings");
+}
+
 
 

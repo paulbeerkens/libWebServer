@@ -88,8 +88,10 @@ bool webserver::UrlRequest::extractParameters() {
             params_.emplace(chunk,"");
         } else {
             std::string value=chunk.substr(equalPos+1, std::string::npos);
+            std::string name=chunk.substr(0,equalPos);
+            if (!deUrlify(name)) return false;
             if (!deUrlify(value)) return false;
-            params_.emplace (chunk.substr(0,equalPos),value);
+            params_.emplace (name,value);
         }
     }
 
