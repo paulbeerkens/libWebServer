@@ -109,9 +109,12 @@ void webserver::WebServer::doWork() {
         std::stringstream output;
         if (request.has_value()) {
             processRequest (*request,output);
+            sendBackResponse (newSocket, output.str ()); //C++20 allows stringview here which would be really nice but trying to not be too cutting edge
+        } else {
+            //TODO sendBackError (newSocket);
         }
 
-        std::cout<<"A Connection "<<output.str ()<<std::endl;
+        ::shutdown(newSocket, SHUT_WR); //send the FIN to let the client know that we are done
         ::close (newSocket);
     }
 }
@@ -204,12 +207,42 @@ void webserver::WebServer::processRequest(const webserver::UrlRequest &urlReques
         }
     }
 
-    //check if this is a url is registered as a file request
-
-    //not found so send an index
+    //not found so send an index page
     indexPageCB_ (urlRequest, os);
 }
 
 bool webserver::WebServer::generateDefaultIndexPage(const webserver::UrlRequest &, std::ostream &) const {
     return false;
+}
+
+bool webserver::WebServer::sendBackResponse(int socket, std::string_view sv) const {
+    //TODO clean this up
+    std::string s ("HTTP/1.1 200 OK");
+    s.push_back(13);
+    s.push_back(10);
+    s+="Content-Type: text/html";
+    s.push_back(13);
+    s.push_back(10);
+    s.push_back(13);
+    s.push_back(10);
+
+    if (!sendN (socket, s.c_str (), s.size ())) return false;
+
+    return sendN (socket, sv.data (), sv.size ());
+}
+
+bool webserver::WebServer::sendN (int socket, const char* buf, std::size_t size) const {
+    const char* wptr=buf;
+    std::size_t dataLeft=size;
+
+    while (dataLeft&&!requestedToTerminate_) {
+        auto written=::write (socket, wptr, dataLeft);
+        if (written<0) {
+            if (errno!=EINTR && errno !=EWOULDBLOCK && errno!=EAGAIN) return false;
+        } else {
+            dataLeft -= written;
+            wptr += written;
+        }
+    }
+    return true;
 }

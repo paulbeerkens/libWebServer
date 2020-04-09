@@ -14,7 +14,10 @@ int main () {
 
 
 
-    webserver::WebServer::get ().registerURL("/settings", [] (const webserver::UrlRequest& t, [[maybe_unused]] std::ostream& os)->bool {os<<"Hello, found params: "<<t.getParamCount()<<std::endl; return true;});
+    webserver::WebServer::get ().registerURL("/settings", [] (const webserver::UrlRequest& t, std::ostream& os)->bool {
+        os<<"<html><head><title>test page</title></head><body>Hello, found params: "<<t.getParamCount()<<"</body></html>"<<std::endl;
+        return true;
+    });
 
     std::this_thread::sleep_for(std::chrono::seconds (300));
 
