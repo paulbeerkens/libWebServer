@@ -12,7 +12,6 @@
 #include <sstream>
 
 std::string webserver::WebServer::version() const {
-    //return std::to_string (LIBWEBSERVERVERSION);
     return LIBWEBSERVERVERSION;
 }
 
@@ -21,7 +20,9 @@ void webserver::WebServer::registerURL(const std::string &url, const webserver::
     std::string urlCopy (url);
     std::transform (urlCopy.begin (), urlCopy.end (), urlCopy.begin (), [] (char c) {return std::tolower(c);});
     bool inserted;
-    std::tie (std::ignore, inserted)=registeredURLs_.emplace (urlCopy, cb);
+    //std::tie (std::ignore, inserted)=registeredURLs_.emplace (std::piecewise_construct, std::forward_as_tuple (urlCopy),std::forward_as_tuple (cb));
+    std::tie (std::ignore, inserted)=registeredURLs_.emplace (urlCopy,cb);
+
     if (!inserted) {
         log ("Url "+urlCopy+" was already registered");
     };
@@ -196,7 +197,7 @@ void webserver::WebServer::processRequest(const webserver::UrlRequest &urlReques
         //found this URL as a callback
         try {
             //make the callback
-            itr->second (urlRequest, os);
+            itr->second.cb_ (urlRequest, os);
             return; //done
         }
         catch (const std::exception& e) {
@@ -211,7 +212,15 @@ void webserver::WebServer::processRequest(const webserver::UrlRequest &urlReques
     indexPageCB_ (urlRequest, os);
 }
 
-bool webserver::WebServer::generateDefaultIndexPage(const webserver::UrlRequest &, std::ostream &) const {
+bool webserver::WebServer::generateDefaultIndexPage(const webserver::UrlRequest &, std::ostream & os) const {
+
+    os <<"<TABLE>";
+    for (const auto& itr: registeredURLs_) {
+        std::stringstream url;
+        url<<"<a href='"<<itr.first<<"'>"<<itr.first<<"</a>";
+        os<<"<TR><TD>"<<url.str ();
+    }
+    os <<"</TABLE>";
     return false;
 }
 

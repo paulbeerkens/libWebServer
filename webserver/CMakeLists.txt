@@ -4,7 +4,7 @@ set(SOURCE_FILES
         UrlRequest.cpp
         UrlRequest.h
         WebServer.cpp
-        WebServer.h)
+        WebServer.h UrlRequestSetting.cpp UrlRequestSetting.h)
 
 add_library(libWebServer ${SOURCE_FILES})
 

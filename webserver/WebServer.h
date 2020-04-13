@@ -57,7 +57,13 @@ protected:
     bool sendBackResponse (int socket, std::string_view sv) const;
     bool sendN (int socket, const char* buf, std::size_t size) const;
 
-    std::unordered_map<std::string, WebServerCB> registeredURLs_;
+    struct RegisteredURLInfo {
+        explicit RegisteredURLInfo (const WebServerCB& cb)
+        :cb_ (cb) {};
+        WebServerCB cb_;
+    };
+
+    std::unordered_map<std::string, RegisteredURLInfo> registeredURLs_;
     WebServerCB indexPageCB_; //this is called when the requested url was not found
     bool generateDefaultIndexPage (const UrlRequest&, std::ostream&) const;
 

@@ -15,7 +15,7 @@ int main () {
 
 
     webserver::WebServer::get ().registerURL("/settings", [] (const webserver::UrlRequest& t, std::ostream& os)->bool {
-        os<<"<html><head><title>test page</title></head><body>Hello, found params: "<<t.getParamCount()<<"</body></html>"<<std::endl;
+        os<<"<head><title>test page</title></head><body>Hello, found params: "<<t.getParamCount()<<"</body>"<<std::endl;
         return true;
     });
 
