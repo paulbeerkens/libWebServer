@@ -15,17 +15,19 @@ std::string webserver::WebServer::version() const {
     return LIBWEBSERVERVERSION;
 }
 
-void webserver::WebServer::registerURL(const std::string &url, const webserver::WebServer::WebServerCB &cb) {
+IUrlRequestSetting& webserver::WebServer::registerURL(const std::string &url, const webserver::WebServer::WebServerCB &cb) {
     //We convert all urls to lower case as they are supposed to be case insensitive.
     std::string urlCopy (url);
     std::transform (urlCopy.begin (), urlCopy.end (), urlCopy.begin (), [] (char c) {return std::tolower(c);});
-    bool inserted;
+
     //std::tie (std::ignore, inserted)=registeredURLs_.emplace (std::piecewise_construct, std::forward_as_tuple (urlCopy),std::forward_as_tuple (cb));
-    std::tie (std::ignore, inserted)=registeredURLs_.emplace (urlCopy,cb);
+    auto [itr, inserted]=registeredURLs_.emplace (urlCopy,cb);
 
     if (!inserted) {
         log ("Url "+urlCopy+" was already registered");
     };
+
+    return itr->second; //return the setting interface to the registered url object. Allows us to set setting like this: WebServer::get ().registerUrl ("/MyUrl",myFunc).description ("A Url").hidden (false).showIndex (true);
 }
 
 void webserver::WebServer::log(std::string_view s) {
@@ -216,26 +218,29 @@ bool webserver::WebServer::generateDefaultIndexPage(const webserver::UrlRequest 
 
     os <<"<TABLE>";
     for (const auto& itr: registeredURLs_) {
+        if (!itr.second.getVisible()) continue;
         std::stringstream url;
         url<<"<a href='"<<itr.first<<"'>"<<itr.first<<"</a>";
         os<<"<TR><TD>"<<url.str ();
+        os<<"<TD>"<<itr.second.getDescription().value_or("");
     }
     os <<"</TABLE>";
     return false;
 }
 
 bool webserver::WebServer::sendBackResponse(int socket, std::string_view sv) const {
-    //TODO clean this up
-    std::string s ("HTTP/1.1 200 OK");
-    s.push_back(13);
-    s.push_back(10);
-    s+="Content-Type: text/html";
-    s.push_back(13);
-    s.push_back(10);
-    s.push_back(13);
-    s.push_back(10);
 
-    if (!sendN (socket, s.c_str (), s.size ())) return false;
+    static const std::string_view baseHeader ("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n");
+    if (!sendN (socket, baseHeader.data (), baseHeader.size ())) return false;
+
+    //If we want to send the content length we need to remove the extra \r\n from the base header
+    //std::string headerContentLength {"Content-Length: "};
+    //headerContentLength+=std::to_string (sv.size ());
+    //headerContentLength.push_back(13);
+    //headerContentLength.push_back(10);
+    //headerContentLength.push_back(13);
+    //headerContentLength.push_back(10);
+    //if (!sendN (socket, headerContentLength.c_str (), headerContentLength.size ())) return false;
 
     return sendN (socket, sv.data (), sv.size ());
 }

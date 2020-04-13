@@ -1,10 +1,11 @@
 cmake_minimum_required(VERSION 3.8)
 
 set(SOURCE_FILES
+        IUrlRequestSetting.h
         UrlRequest.cpp
         UrlRequest.h
         WebServer.cpp
-        WebServer.h UrlRequestSetting.cpp UrlRequestSetting.h)
+        WebServer.h )
 
 add_library(libWebServer ${SOURCE_FILES})
 

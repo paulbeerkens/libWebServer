@@ -17,7 +17,7 @@ int main () {
     webserver::WebServer::get ().registerURL("/settings", [] (const webserver::UrlRequest& t, std::ostream& os)->bool {
         os<<"<head><title>test page</title></head><body>Hello, found params: "<<t.getParamCount()<<"</body>"<<std::endl;
         return true;
-    });
+    }).description("My first URL").visible (true).showShortcuts(true);
 
     std::this_thread::sleep_for(std::chrono::seconds (300));
 

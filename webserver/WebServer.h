@@ -7,6 +7,8 @@
 #include <functional>
 #include <thread>
 #include <atomic>
+#include "IUrlRequestSetting.h"
+
 
 namespace webserver {
 
@@ -19,7 +21,7 @@ public:
         return instance;
     }
 
-    void registerURL(const std::string &url, const WebServerCB& cb);
+    IUrlRequestSetting& registerURL(const std::string &url, const WebServerCB& cb);
 
     void onUnrecognizedURL(std::ostream &os);
 
@@ -57,10 +59,23 @@ protected:
     bool sendBackResponse (int socket, std::string_view sv) const;
     bool sendN (int socket, const char* buf, std::size_t size) const;
 
-    struct RegisteredURLInfo {
+    struct RegisteredURLInfo: public IUrlRequestSetting {
         explicit RegisteredURLInfo (const WebServerCB& cb)
         :cb_ (cb) {};
         WebServerCB cb_;
+
+        IUrlRequestSetting& description(const std::string &d) override {description_=d; return *this;}
+        IUrlRequestSetting& visible(bool v) override {visible_=v; return *this;}
+        IUrlRequestSetting& showShortcuts(bool s) override {showShortcuts_=s; return *this;}
+
+        [[nodiscard]] const std::optional<std::string>& getDescription() const {return description_;}
+        [[nodiscard]] bool getVisible() const {return visible_;}
+        [[nodiscard]] bool getShowShortcuts() const {return showShortcuts_;}
+
+    protected:
+        std::optional <std::string> description_;
+        bool visible_ {true};
+        bool showShortcuts_ {true};
     };
 
     std::unordered_map<std::string, RegisteredURLInfo> registeredURLs_;
