@@ -63,19 +63,23 @@ protected:
         explicit RegisteredURLInfo (const WebServerCB& cb)
         :cb_ (cb) {};
         WebServerCB cb_;
-
+    private: //we don't want these to be called other than through the interface IUrlRequestSetting from the registerURL call.
         IUrlRequestSetting& description(const std::string &d) override {description_=d; return *this;}
         IUrlRequestSetting& visible(bool v) override {visible_=v; return *this;}
         IUrlRequestSetting& showShortcuts(bool s) override {showShortcuts_=s; return *this;}
+        IUrlRequestSetting& displayName(const std::string &n) override {displayName_=n; return *this;}
 
+    public:
         [[nodiscard]] const std::optional<std::string>& getDescription() const {return description_;}
         [[nodiscard]] bool getVisible() const {return visible_;}
         [[nodiscard]] bool getShowShortcuts() const {return showShortcuts_;}
+        [[nodiscard]] const std::optional <std::string>& getDisplayName () const {return displayName_;};
 
     protected:
         std::optional <std::string> description_;
         bool visible_ {true};
         bool showShortcuts_ {true};
+        std::optional <std::string> displayName_;
     };
 
     std::unordered_map<std::string, RegisteredURLInfo> registeredURLs_;
@@ -89,6 +93,10 @@ protected:
     std::atomic <bool> requestedToTerminate_;
 
     std::optional <UrlRequest> readRequest (int socket, const std::string& remoteIP);
+
+    std::string getShortCutsHTML () const;
+    //void generateShortCutsHTML (); //populates shortCutsHTML
+    //std::string shortCutsHTML_; //the html that goes to the top a web pages when enabled
 };
 
 }

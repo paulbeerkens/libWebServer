@@ -11,10 +11,11 @@ public:
     explicit UrlRequest (const std::string& remoteIP);
     bool processHttpRequestLine (const std::string& line);
 
-    const std::string& getMethod () const {return method_;};
-    const std::string& getRequestTarget () const {return requestTarget_;};
-    const std::string& getHost () const {return host_;}; //returns host and port (if present)
-    const std::string& getBaseUrl () const {return baseUrl_;};
+    const std::string& getMethod () const {return method_;}
+    const std::string& getRequestTarget () const {return requestTarget_;}
+    const std::string& getHost () const {return host_;} //returns host and port (if present)
+    const std::string& getBaseUrl () const {return baseUrl_;}
+    const std::string& getRemoteIP () const {return remoteIP_;}
 
     std::size_t getParamCount () const {return params_.size ();}
     bool hasParam (const std::string& name) const {return params_.count (name)>0;}

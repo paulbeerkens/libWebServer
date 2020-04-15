@@ -27,6 +27,9 @@ IUrlRequestSetting& webserver::WebServer::registerURL(const std::string &url, co
         log ("Url "+urlCopy+" was already registered");
     };
 
+    //TODO return a setter object that in it's destructor does the actual insert
+    //this will allow us to generate the html for the index when a new url is registered
+    //and avoid showing urls that will be marked as hidden a little while later (because typically done at start-up maybe not a huge concern).
     return itr->second; //return the setting interface to the registered url object. Allows us to set setting like this: WebServer::get ().registerUrl ("/MyUrl",myFunc).description ("A Url").hidden (false).showIndex (true);
 }
 
@@ -198,6 +201,7 @@ void webserver::WebServer::processRequest(const webserver::UrlRequest &urlReques
     if (itr!=registeredURLs_.end ()) {
         //found this URL as a callback
         try {
+            if (itr->second.getShowShortcuts()) os<<getShortCutsHTML ();
             //make the callback
             itr->second.cb_ (urlRequest, os);
             return; //done
@@ -215,6 +219,7 @@ void webserver::WebServer::processRequest(const webserver::UrlRequest &urlReques
 }
 
 bool webserver::WebServer::generateDefaultIndexPage(const webserver::UrlRequest &, std::ostream & os) const {
+    os<<getShortCutsHTML ();
 
     os <<"<TABLE>";
     for (const auto& itr: registeredURLs_) {
@@ -259,4 +264,21 @@ bool webserver::WebServer::sendN (int socket, const char* buf, std::size_t size)
         }
     }
     return true;
+}
+
+std::string webserver::WebServer::getShortCutsHTML() const {
+    std::stringstream ss;
+    ss<<"<section><nav>";
+    bool needToaddSeparator {false};
+
+    for (const auto& registeredURL: registeredURLs_) {
+        if (registeredURL.second.getVisible()) {
+            auto displayName=registeredURL.second.getDisplayName ().value_or(registeredURL.first); //show url or displayName if set
+            if (needToaddSeparator) ss<<"|";
+            ss<<R"(<a href=")"<<registeredURL.first<<R"(">)"<<displayName<<R"(</a>)";
+            needToaddSeparator=true;
+        }
+    }
+    ss<<"</nav></section><hr>";
+    return ss.str ();
 }
