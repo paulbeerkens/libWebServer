@@ -27,6 +27,9 @@ IUrlRequestSetting& webserver::WebServer::registerURL(const std::string &url, co
         log ("Url "+urlCopy+" was already registered");
     };
 
+    auto startItr=url.find_first_not_of('/');
+    static_cast <IUrlRequestSetting &> (itr->second).displayName(url.substr(startItr)); //cast to IUrlRequest to access the set function displayName.
+
     //TODO return a setter object that in it's destructor does the actual insert
     //this will allow us to generate the html for the index when a new url is registered
     //and avoid showing urls that will be marked as hidden a little while later (because typically done at start-up maybe not a huge concern).
@@ -225,7 +228,8 @@ bool webserver::WebServer::generateDefaultIndexPage(const webserver::UrlRequest 
     for (const auto& itr: registeredURLs_) {
         if (!itr.second.getVisible()) continue;
         std::stringstream url;
-        url<<"<a href='"<<itr.first<<"'>"<<itr.first<<"</a>";
+        auto displayName=itr.second.getDisplayName (); //show url or displayName if set
+        url<<"<a href='"<<itr.first<<"'>"<<displayName<<"</a>";
         os<<"<TR><TD>"<<url.str ();
         os<<"<TD>"<<itr.second.getDescription().value_or("");
     }
@@ -273,8 +277,8 @@ std::string webserver::WebServer::getShortCutsHTML() const {
 
     for (const auto& registeredURL: registeredURLs_) {
         if (registeredURL.second.getVisible()) {
-            auto displayName=registeredURL.second.getDisplayName ().value_or(registeredURL.first); //show url or displayName if set
-            if (needToaddSeparator) ss<<"|";
+            auto displayName=registeredURL.second.getDisplayName (); //show url or displayName if set
+            if (needToaddSeparator) ss<<" | ";
             ss<<R"(<a href=")"<<registeredURL.first<<R"(">)"<<displayName<<R"(</a>)";
             needToaddSeparator=true;
         }

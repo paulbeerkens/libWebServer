@@ -68,18 +68,17 @@ protected:
         IUrlRequestSetting& visible(bool v) override {visible_=v; return *this;}
         IUrlRequestSetting& showShortcuts(bool s) override {showShortcuts_=s; return *this;}
         IUrlRequestSetting& displayName(const std::string &n) override {displayName_=n; return *this;}
-
     public:
         [[nodiscard]] const std::optional<std::string>& getDescription() const {return description_;}
         [[nodiscard]] bool getVisible() const {return visible_;}
         [[nodiscard]] bool getShowShortcuts() const {return showShortcuts_;}
-        [[nodiscard]] const std::optional <std::string>& getDisplayName () const {return displayName_;};
+        [[nodiscard]] const std::string& getDisplayName () const {return displayName_;};
 
     protected:
         std::optional <std::string> description_;
         bool visible_ {true};
         bool showShortcuts_ {true};
-        std::optional <std::string> displayName_;
+        std::string displayName_;
     };
 
     std::unordered_map<std::string, RegisteredURLInfo> registeredURLs_;
