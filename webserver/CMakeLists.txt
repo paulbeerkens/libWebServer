@@ -7,7 +7,7 @@ set(SOURCE_FILES
         WebServer.cpp
         WebServer.h )
 
-add_library(libWebServer ${SOURCE_FILES})
+add_library(libWebServer STATIC ${SOURCE_FILES})
 
 add_definitions (-DLIBWEBSERVERVERSION="${PROJECT_VERSION}")
 

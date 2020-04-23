@@ -89,7 +89,7 @@ protected:
     int socket_ {-1};
 
     std::unique_ptr <std::thread> threadPtr_;
-    std::atomic <bool> requestedToTerminate_;
+    std::atomic <bool> requestedToTerminate_ {false};
 
     std::optional <UrlRequest> readRequest (int socket, const std::string& remoteIP);
 
