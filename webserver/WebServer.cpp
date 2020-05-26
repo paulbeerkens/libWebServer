@@ -60,7 +60,7 @@ bool webserver::WebServer::start(std::int32_t port) {
     bzero (&sockAddr, sizeof (sockAddr));
     sockAddr.sin_family = AF_INET;
     sockAddr.sin_addr.s_addr = htonl (INADDR_ANY);
-    sockAddr.sin_port = htons (port_);
+    sockAddr.sin_port = htons (static_cast <std::uint16_t> (port_));
 
     auto result=::bind (socket_, reinterpret_cast<const struct sockaddr*>(&sockAddr),sizeof (sockAddr));
     if (result!=0) {
@@ -263,7 +263,7 @@ bool webserver::WebServer::sendN (int socket, const char* buf, std::size_t size)
         if (written<0) {
             if (errno!=EINTR && errno !=EWOULDBLOCK && errno!=EAGAIN) return false;
         } else {
-            dataLeft -= written;
+            dataLeft -= static_cast <std::size_t> (written);
             wptr += written;
         }
     }

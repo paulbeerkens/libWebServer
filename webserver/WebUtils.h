@@ -29,10 +29,10 @@ inline std::vector<std::string> split (const std::string& s, char delim) {
 
 
 inline bool deUrlify (std::string& s) {
-    int originalLength=s.size ();
-    int newLength=0; //for now
+    auto originalLength=s.size ();
+    std::size_t newLength=0; //for now
 
-    for (int i=0; i<originalLength; ++i) {
+    for (std::size_t i=0; i<originalLength; ++i) {
         char c = s[i];
         if (c == '%') {
             if (i+2>=originalLength) return false; //not enough room left
